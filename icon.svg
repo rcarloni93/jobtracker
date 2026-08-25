@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#007aff"/>
+  <text x="256" y="310" text-anchor="middle" font-size="260" font-family="-apple-system,sans-serif">🧠</text>
+  <rect x="80" y="370" width="352" height="50" rx="25" fill="white" opacity="0.9"/>
+  <text x="256" y="406" text-anchor="middle" font-size="36" font-weight="700" font-family="-apple-system,sans-serif" fill="#007aff">NEUROPSICO</text>
+</svg>
