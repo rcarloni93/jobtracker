@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="JobTracker">
+<meta name="theme-color" content="#007aff">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icon.svg">
+<title>Job Tracker — Federica</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#f2f2f7;--surface:#fff;--s2:#f2f2f7;--s3:#e5e5ea;
+  --text:#000;--t2:#3c3c43;--tm:#8e8e93;--sep:rgba(60,60,67,.29);
+  --ac:#007aff;--ac2:#0062cc;
+  --su:#34c759;--su-bg:#e8f9ed;--su-t:#1a6630;
+  --wa:#ff9f0a;--wa-bg:#fff3e0;--wa-t:#7a4700;
+  --da:#ff3b30;--da-bg:#ffebea;--da-t:#8b1a15;
+  --pu:#5856d6;--pu-bg:#eeeefd;--pu-t:#2d2c7a;
+  --te:#30b0c7;--te-bg:#e5f6fa;--te-t:#145a6b;
+  --r:13px;--rsm:8px;
+  --safe-top:env(safe-area-inset-top);
+  --safe-bot:env(safe-area-inset-bottom);
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1e;--surface:#2c2c2e;--s2:#3a3a3c;--s3:#48484a;
+  --text:#fff;--t2:#ebebf5;--tm:#8e8e93;--sep:rgba(84,84,88,.65);
+  --su-bg:#0d3318;--su-t:#5de37a;
+  --wa-bg:#3d2500;--wa-t:#ffbe5c;
+  --da-bg:#3d100e;--da-t:#ff7b76;
+  --pu-bg:#1a1945;--pu-t:#9998f5;
+  --te-bg:#0a2d34;--te-t:#5dd4eb;
+}}
+html{height:100%;overflow:hidden}
+body{height:100%;font-family:-apple-system,'SF Pro Text','Helvetica Neue',sans-serif;background:var(--bg);color:var(--text);font-size:15px;line-height:1.4;overflow:hidden;display:flex;flex-direction:column}
+
+/* ── STATUS BAR SAFE AREA ── */
+.statusbar{height:var(--safe-top);background:rgba(242,242,247,.9);flex-shrink:0}
+@media(prefers-color-scheme:dark){.statusbar{background:rgba(28,28,30,.9)}}
+
+/* ── VIEWS ── */
+.view{display:none;flex-direction:column;flex:1;overflow:hidden}
+.view.active{display:flex}
+
+/* ══════════ LIST VIEW ══════════ */
+/* topbar */
+.topbar{background:rgba(242,242,247,.9);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-bottom:.5px solid var(--sep);padding:10px 16px 8px;flex-shrink:0}
+@media(prefers-color-scheme:dark){.topbar{background:rgba(28,28,30,.9)}}
+.topbar-row{display:flex;justify-content:space-between;align-items:center}
+.topbar-title{font-size:17px;font-weight:700;letter-spacing:-.4px}
+.topbar-sub{font-size:11px;color:var(--tm);margin-top:1px}
+.pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+.pill{font-size:11px;font-weight:500;padding:3px 9px;border-radius:20px;background:var(--surface);border:.5px solid var(--sep)}
+.pill-g{background:var(--su-bg);color:var(--su-t);border-color:transparent}
+.pill-o{background:var(--wa-bg);color:var(--wa-t);border-color:transparent}
+.pill-b{background:var(--pu-bg);color:var(--pu-t);border-color:transparent}
+
+/* search + filters */
+.searchbar{background:var(--surface);border-bottom:.5px solid var(--sep);padding:8px 12px;flex-shrink:0;display:flex;flex-direction:column;gap:6px}
+.search-input-wrap{position:relative;display:flex;align-items:center}
+.search-icon{position:absolute;left:10px;font-size:14px;color:var(--tm);pointer-events:none}
+input[type=search]{width:100%;padding:7px 12px 7px 32px;border-radius:10px;border:none;background:var(--s2);color:var(--text);font-size:15px;font-family:inherit;outline:none;-webkit-appearance:none}
+input[type=search]::placeholder{color:var(--tm)}
+.filter-chips{display:flex;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.filter-chips::-webkit-scrollbar{display:none}
+.fchip{font-size:12px;font-weight:500;padding:5px 12px;border-radius:20px;border:.5px solid var(--sep);background:var(--surface);color:var(--t2);white-space:nowrap;cursor:pointer;flex-shrink:0;-webkit-appearance:none;font-family:inherit}
+.fchip.active{background:var(--ac);color:#fff;border-color:var(--ac)}
+.dist-row{display:flex;align-items:center;gap:8px;padding:0 2px}
+.dist-lbl{font-size:12px;color:var(--tm);white-space:nowrap;min-width:110px}
+input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--s3);accent-color:var(--ac)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--ac);box-shadow:0 2px 8px rgba(0,122,255,.4)}
+.dist-val{font-size:13px;font-weight:700;color:var(--ac);min-width:44px;text-align:right}
+
+/* card list */
+.cardlist{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 0 calc(16px + var(--safe-bot)) 0}
+.section-hdr{font-size:12px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.06em;padding:12px 16px 4px}
+.card{background:var(--surface);margin:0 12px 8px;border-radius:var(--r);box-shadow:0 1px 3px rgba(0,0,0,.06);cursor:pointer;overflow:hidden;border:.5px solid var(--sep);transition:opacity .1s}
+.card:active{opacity:.7}
+.card-body{padding:12px 14px}
+.card-top{display:flex;gap:10px;align-items:flex-start;margin-bottom:6px}
+.ci{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ci-privato{background:var(--te-bg)}.ci-irccs{background:var(--pu-bg)}.ci-asst{background:#deeeff}
+.ci-coop{background:var(--wa-bg)}.ci-ricerca{background:var(--da-bg)}
+.card-meta{min-width:0;flex:1}
+.cn{font-size:15px;font-weight:600;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cs{font-size:12px;color:var(--tm);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.badge{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;display:inline-block;white-space:nowrap}
+.bp{background:var(--te-bg);color:var(--te-t)}.bi{background:var(--pu-bg);color:var(--pu-t)}
+.ba{background:#deeeff;color:#005ec4}.bc{background:var(--wa-bg);color:var(--wa-t)}.br{background:var(--da-bg);color:var(--da-t)}
+.pb{font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.pb-aperta{background:var(--su-bg);color:var(--su-t)}
+.pb-spontanea{background:var(--s2);color:var(--tm);border:.5px solid var(--sep)}
+.pb-borsa{background:var(--pu-bg);color:var(--pu-t)}.pb-lp{background:var(--wa-bg);color:var(--wa-t)}
+.card-foot{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;background:var(--s2);border-top:.5px solid var(--sep)}
+.cf-left{font-size:11px;color:var(--tm)}
+.cf-right{display:flex;align-items:center;gap:6px}
+.stato-dot{font-size:11px;font-weight:500}
+.sd-candidato{color:var(--ac)}.sd-risposta{color:var(--su)}.sd-colloquio{color:var(--pu)}.sd-scartato{color:var(--da)}.sd-da_candidare{color:var(--tm)}
+.chevron{color:var(--tm);font-size:16px;font-weight:300}
+.empty{text-align:center;padding:60px 24px;color:var(--tm)}
+.empty-icon{font-size:52px;margin-bottom:12px}
+
+/* ══════════ DETAIL VIEW ══════════ */
+.detail-nav{background:rgba(242,242,247,.9);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-bottom:.5px solid var(--sep);padding:10px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+@media(prefers-color-scheme:dark){.detail-nav{background:rgba(28,28,30,.9)}}
+.back-btn{background:none;border:none;color:var(--ac);font-size:15px;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:4px;padding:0;font-weight:400}
+.back-btn:active{opacity:.6}
+.detail-nav-title{font-size:17px;font-weight:600;flex:1;text-align:center;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.save-btn-nav{background:var(--ac);color:#fff;border:none;border-radius:var(--rsm);padding:5px 12px;font-size:13px;font-weight:600;font-family:inherit;cursor:pointer}
+.save-btn-nav:active{opacity:.8}
+
+.detail-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(24px + var(--safe-bot))}
+
+.detail-hero{padding:20px 16px 16px;border-bottom:.5px solid var(--sep)}
+.dh-icon{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:10px}
+.dh-name{font-size:22px;font-weight:700;letter-spacing:-.5px;line-height:1.2}
+.dh-sub{font-size:13px;color:var(--tm);margin-top:4px}
+.dh-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:10px}
+
+.detail-card{background:var(--surface);margin:10px 12px 0;border-radius:var(--r);overflow:hidden;border:.5px solid var(--sep)}
+.detail-card + .detail-card{margin-top:8px}
+.dc-header{padding:12px 14px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tm)}
+.dc-body{padding:8px 14px 14px;font-size:14px;color:var(--t2);line-height:1.6}
+.dc-body.note-style{background:var(--s2);margin:8px 10px 10px;border-radius:var(--rsm);padding:10px 12px;font-size:14px}
+.dc-link{display:flex;align-items:center;gap:8px;padding:10px 14px 14px;color:var(--ac);font-size:14px;font-weight:600;text-decoration:none}
+.dc-link:active{opacity:.7}
+.tag-wrap{display:flex;flex-wrap:wrap;gap:4px;padding:4px 14px 14px}
+.tag{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px}
+.tg{background:var(--su-bg);color:var(--su-t)}.tb{background:var(--pu-bg);color:var(--pu-t)}
+.to{background:var(--wa-bg);color:var(--wa-t)}.tr{background:var(--da-bg);color:var(--da-t)}
+
+.stato-card{background:var(--surface);margin:8px 12px 0;border-radius:var(--r);border:.5px solid var(--sep);overflow:hidden}
+.stato-lbl{padding:12px 14px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tm)}
+.stato-sel{width:calc(100% - 28px);margin:8px 14px 0;font-family:inherit;font-size:15px;font-weight:500;padding:10px 12px;border-radius:var(--rsm);border:.5px solid var(--sep);background:var(--s2);color:var(--text);-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238e8e93' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.note-lbl{padding:12px 14px 0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tm)}
+.note-ta{width:calc(100% - 28px);margin:8px 14px 14px;min-height:80px;font-size:14px;padding:10px 12px;border-radius:var(--rsm);border:.5px solid var(--sep);background:var(--s2);color:var(--text);font-family:inherit;resize:none;line-height:1.5;display:block}
+.note-ta:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px rgba(0,122,255,.15)}
+.save-row{padding:0 14px 14px;display:flex;gap:8px}
+.save-main{flex:1;padding:12px;background:var(--ac);color:#fff;border:none;border-radius:var(--rsm);font-size:15px;font-weight:600;font-family:inherit;cursor:pointer}
+.save-main:active{background:var(--ac2)}
+.save-ok{background:var(--su)!important}
+
+/* ══════════ SETTINGS VIEW ══════════ */
+.settings-nav{background:rgba(242,242,247,.9);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-bottom:.5px solid var(--sep);padding:10px 16px;flex-shrink:0}
+@media(prefers-color-scheme:dark){.settings-nav{background:rgba(28,28,30,.9)}}
+.settings-title{font-size:17px;font-weight:700}
+.settings-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(24px + var(--safe-bot))}
+.settings-group{margin:16px 12px 0}
+.sg-lbl{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tm);padding:0 4px;margin-bottom:6px}
+.sg-card{background:var(--surface);border-radius:var(--r);border:.5px solid var(--sep);overflow:hidden}
+.sg-row{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;border-bottom:.5px solid var(--sep);font-size:15px}
+.sg-row:last-child{border-bottom:none}
+.sg-row-lbl{color:var(--t2)}
+.sg-row-val{color:var(--tm);font-size:14px}
+.sg-btn{background:var(--ac);color:#fff;border:none;border-radius:var(--rsm);padding:8px 16px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer}
+.sg-btn:active{opacity:.8}
+.sg-btn-da{background:var(--da)}
+.sg-desc{font-size:12px;color:var(--tm);padding:6px 4px 0;line-height:1.5}
+
+/* ── TAB BAR ── */
+.tabbar{background:rgba(242,242,247,.9);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-top:.5px solid var(--sep);display:flex;padding-bottom:var(--safe-bot);flex-shrink:0}
+@media(prefers-color-scheme:dark){.tabbar{background:rgba(28,28,30,.9)}}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 0 5px;cursor:pointer;border:none;background:none;font-family:inherit;color:var(--tm);font-size:10px;font-weight:500;gap:2px;transition:color .15s}
+.tab.active{color:var(--ac)}
+.tab-icon{font-size:22px;line-height:1}
+</style>
+</head>
+<body>
+
+<div class="statusbar"></div>
+
+<!-- ══ LIST VIEW ══ -->
+<div class="view active" id="viewList">
+  <div class="topbar">
+    <div class="topbar-row">
+      <div>
+        <div class="topbar-title">Opportunità 🧠</div>
+        <div class="topbar-sub">Neuropsicologia · Monza e dintorni</div>
+      </div>
+    </div>
+    <div class="pills" id="pills"></div>
+  </div>
+
+  <div class="searchbar">
+    <div class="search-input-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="search" id="searchQ" placeholder="Cerca struttura, città, competenza…" oninput="applyFilters()" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="filter-chips" id="filterChips">
+      <button class="fchip" data-filter="tipo" data-val="" onclick="setChip(this)">Tutte</button>
+      <button class="fchip" data-filter="tipo" data-val="privato" onclick="setChip(this)">🏥 Privato</button>
+      <button class="fchip" data-filter="tipo" data-val="irccs" onclick="setChip(this)">🔬 IRCCS</button>
+      <button class="fchip" data-filter="tipo" data-val="asst" onclick="setChip(this)">🏨 ASST</button>
+      <button class="fchip" data-filter="tipo" data-val="coop" onclick="setChip(this)">🤝 Coop.</button>
+      <button class="fchip" data-filter="tipo" data-val="ricerca" onclick="setChip(this)">📚 Ricerca</button>
+      <button class="fchip" data-filter="pos" data-val="aperta" onclick="setChip(this)">🟢 Aperta ora</button>
+      <button class="fchip" data-filter="pos" data-val="lp" onclick="setChip(this)">🟡 LP/incarico</button>
+      <button class="fchip" data-filter="pos" data-val="borsa" onclick="setChip(this)">🔵 Borsa</button>
+      <button class="fchip" data-filter="prov" data-val="MI" onclick="setChip(this)">📍 MI</button>
+      <button class="fchip" data-filter="prov" data-val="MB" onclick="setChip(this)">📍 MB</button>
+      <button class="fchip" data-filter="prov" data-val="LC" onclick="setChip(this)">📍 LC</button>
+      <button class="fchip" data-filter="prov" data-val="CO" onclick="setChip(this)">📍 CO</button>
+      <button class="fchip" data-filter="prov" data-val="BG" onclick="setChip(this)">📍 BG</button>
+      <button class="fchip" data-filter="prov" data-val="PV" onclick="setChip(this)">📍 PV</button>
+      <button class="fchip" data-filter="prov" data-val="LO" onclick="setChip(this)">📍 LO</button>
+    </div>
+    <div class="dist-row">
+      <span class="dist-lbl">📏 Max distanza da Monza</span>
+      <input type="range" id="distSlider" min="10" max="80" value="80" step="5" oninput="onSlider()">
+      <span class="dist-val" id="distVal">Tutte</span>
+    </div>
+  </div>
+
+  <div class="cardlist" id="cardList"></div>
+  <div class="empty" id="emptyState" style="display:none">
+    <div class="empty-icon">🔍</div>
+    <div>Nessun risultato.<br>Prova ad allargare i filtri.</div>
+  </div>
+</div>
+
+<!-- ══ DETAIL VIEW ══ -->
+<div class="view" id="viewDetail">
+  <div class="detail-nav">
+    <button class="back-btn" onclick="showList()">‹ Indietro</button>
+    <div class="detail-nav-title" id="detailNavTitle"></div>
+    <button class="save-btn-nav" id="saveNavBtn" onclick="saveDetail()">Salva</button>
+  </div>
+  <div class="detail-scroll" id="detailScroll"></div>
+</div>
+
+<!-- ══ SETTINGS VIEW ══ -->
+<div class="view" id="viewSettings">
+  <div class="settings-nav">
+    <div class="settings-title">Impostazioni</div>
+  </div>
+  <div class="settings-scroll">
+    <div class="settings-group">
+      <div class="sg-lbl">I miei dati</div>
+      <div class="sg-card">
+        <div class="sg-row">
+          <span class="sg-row-lbl">Strutture tracciate</span>
+          <span class="sg-row-val" id="sgTot">—</span>
+        </div>
+        <div class="sg-row">
+          <span class="sg-row-lbl">Candidature inviate</span>
+          <span class="sg-row-val" id="sgCand">—</span>
+        </div>
+        <div class="sg-row">
+          <span class="sg-row-lbl">Risposte ricevute</span>
+          <span class="sg-row-val" id="sgRisp">—</span>
+        </div>
+        <div class="sg-row">
+          <span class="sg-row-lbl">Colloqui</span>
+          <span class="sg-row-val" id="sgColl">—</span>
+        </div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="sg-lbl">Bacheche da monitorare</div>
+      <div class="sg-card">
+        <div class="sg-row" onclick="openUrl('https://www.opl.it/bandi-e-offerte.php')">
+          <span class="sg-row-lbl">OPL — Ordine Psicologi Lombardia</span>
+          <span class="sg-row-val">Ogni martedì ›</span>
+        </div>
+        <div class="sg-row" onclick="openUrl('https://sinpia.eu/bandi-ed-offerte-di-lavoro/')">
+          <span class="sg-row-lbl">SINPIA</span>
+          <span class="sg-row-val">Settimanale ›</span>
+        </div>
+        <div class="sg-row" onclick="openUrl('https://interazioniumane.it/lavoro')">
+          <span class="sg-row-lbl">IESCUM / Board ABA</span>
+          <span class="sg-row-val">Board ›</span>
+        </div>
+        <div class="sg-row" onclick="openUrl('https://bandi.mur.gov.it')">
+          <span class="sg-row-lbl">MUR — Assegni di ricerca</span>
+          <span class="sg-row-val">Bandi ›</span>
+        </div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <div class="sg-lbl">Info app</div>
+      <div class="sg-card">
+        <div class="sg-row">
+          <span class="sg-row-lbl">Versione dati</span>
+          <span class="sg-row-val">26 agosto 2026</span>
+        </div>
+        <div class="sg-row">
+          <span class="sg-row-lbl">Strutture in database</span>
+          <span class="sg-row-val" id="sgDb">—</span>
+        </div>
+        <div class="sg-row">
+          <span class="sg-row-lbl">Province coperte</span>
+          <span class="sg-row-val">MI · MB · LC · CO · BG · PV · LO</span>
+        </div>
+      </div>
+      <div class="sg-desc">I dati vengono salvati localmente sul tuo dispositivo tramite IndexedDB. Nessun server, nessuna connessione necessaria dopo la prima installazione.</div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<div class="tabbar" id="tabbar">
+  <button class="tab active" id="tabList" onclick="showTab('list')">
+    <span class="tab-icon">🔍</span>
+    <span>Cerca</span>
+  </button>
+  <button class="tab" id="tabSettings" onclick="showTab('settings')">
+    <span class="tab-icon">⚙️</span>
+    <span>Info</span>
+  </button>
+</div>
+
+<script>
+/* ══════════════════════════════════
+   DATA
+══════════════════════════════════ */
+var DATA=[
+  {id:1,nome:"Imparole",tipo:"privato",prov:"MI",citta:"Cernusco s/N · Milano · Seveso",distKm:18,pos:"aperta",titolo:"Neuropsicologo/a e NPI — diagnosi e riabilitazione (P.IVA)",link:"https://www.imparole.it/lavora-con-noi/",come:"risorse.progetti@imparole.it\nCollaborazione P.IVA. Disponibilità: lun–ven pomeriggio + sabato mattina.\nSedi: Milano, Cernusco s/N (MI), Seveso (MB) e domicilio.",note:"⭐ POSIZIONI APERTE. Centro specializzato in diagnosi e riabilitazione DSA, disturbi del linguaggio, ritardi psicomotori, autismo. Cerca neuropsicologo per valutazione funzionale (min. 2 mattine/sett, iscrizione liste DSA ATS Cernusco o Milano) e NPI specializzato in neurosviluppo. Tre sedi, una in MB.",tags:["DSA","ADHD","ASD","neuropsicologia"],priority:1},
+  {id:2,nome:"Centro Acacia",tipo:"privato",prov:"MB",citta:"Monza (via Galilei 42)",distKm:2,pos:"spontanea",titolo:"Psicologo età evolutiva / équipe DSA (libera professione)",link:"https://www.centroacacia.it/",come:"m.trevisan@centroacacia.it — tel. 392 6514322",note:"⭐ A Monza. Équipe accreditata ASST Brianza per prima certificazione DSA. Psicologi, psicoterapeuti, logopedisti, NPI. Psicoterapia età evolutiva e neuropsicologia. Collaboratori in libera professione. Match geografico perfetto.",tags:["DSA","età evolutiva","Monza","accreditato"],priority:1},
+  {id:3,nome:"Studio Associato di Psicologia — Seveso",tipo:"privato",prov:"MB",citta:"Seveso (MB)",distKm:22,pos:"aperta",titolo:"Collaborazione per équipe valutazione DSA (accreditata ATS Brianza)",link:"https://it.indeed.com/q-psicologo,-tutor-dsa-l-monza,-lombardia-offerte-lavoro.html",come:"Annuncio su Indeed (cerca 'Studio Associato di Psicologia Seveso')\nCollaborazione professionale.",note:"⭐ Centro multidisciplinare età evolutiva con équipe accreditata ATS Brianza per valutazione DSA. Annuncio attivo per NPI, ma l'équipe include psicologi — vale la candidatura spontanea come neuropsicologo per le valutazioni.",tags:["DSA","età evolutiva","accreditato","MB"],priority:1},
+  {id:4,nome:"Studio professionale sanitario — Muggiò",tipo:"privato",prov:"MB",citta:"Muggiò (MB)",distKm:5,pos:"aperta",titolo:"Psicologo/a con esperienza o interesse in età evolutiva",link:"https://it.indeed.com/Provincia-di-Monza-e-della-Brianza,-Lombardia-offerte-lavoro-Psicologo",come:"Annuncio Indeed / Jobijoba — studio arredato e attrezzato per visite e trattamenti.\nCerca anche psicoterapeuti sistemico-relazionale e/o età evolutiva.",note:"⭐ A 5 km da Monza. Studio professionale sanitario che cerca esplicitamente psicologo con esperienza o interesse in età evolutiva. Ristrutturato 2026, in centro città con vetrina sulla piazza. Annuncio ricorrente.",tags:["età evolutiva","Monza","MB"],priority:1},
+  {id:5,nome:"Evolutiva-mente Centro Polispecialistico",tipo:"privato",prov:"MB",citta:"Vimercate (MB)",distKm:12,pos:"spontanea",titolo:"Psicologo / Neuropsicologo età evolutiva",link:"https://www.evolutiva-mente.it/",come:"evolutiva-mente.it (form contatto)",note:"Équipe: NPI dirigente ASST Vimercate, neuropsicologa formata a Bicocca (master DSA/ADHD), TNPEE con master autismo. DSA, ADHD, ASD, disturbi dello sviluppo. Profilo Bicocca + neuropsicologia = corrispondenza forte.",tags:["DSA","ADHD","ASD","neuropsicologia"],priority:1},
+  {id:6,nome:"Centro Clinico di Psicologia Monza",tipo:"privato",prov:"MB",citta:"Monza",distKm:2,pos:"spontanea",titolo:"Psicologo età evolutiva / collaboratore LP",link:"https://www.centropsicologiamonza.it/",come:"centropsicologiamonza.it (form contatto)",note:"A Monza. Équipe età evolutiva: psicoterapeuti, NPI, logopedista. Disturbi dello sviluppo, psicopatologia infanzia e adolescenza. Collaboratori in regime libero-professionale.",tags:["età evolutiva","Monza","neuropsicologia"],priority:2},
+  {id:7,nome:"Abilitaba Studio di Psicologia",tipo:"privato",prov:"MB",citta:"Meda / Cesano Maderno (MB)",distKm:16,pos:"aperta",titolo:"Terapista ABA con laurea sanitaria (P.IVA)",link:"mailto:abilitaba@gmail.com",come:"abilitaba@gmail.com — annuncio Indeed attivo\nRichiesta P.IVA e disponibilità pomeridiana.",note:"⭐ APERTA. Studio di psicologia in area MB. Cerca terapisti ABA con laurea sanitaria da inserire in organico. ASD, funzioni esecutive. Buona base per entrare, poi crescere verso valutazione.",tags:["ABA","ASD","MB"],priority:1},
+  {id:8,nome:"Centro Welcomed",tipo:"privato",prov:"MI",citta:"Milano (3 sedi)",distKm:20,pos:"aperta",titolo:"Psicologo / Terapista età evolutiva",link:"https://centrowelcomed.it/lavora-con-noi",come:"centrowelcomed.it/lavora-con-noi — info@centrowelcomed.it",note:"Polispecialistico: ASD (ABA, TEACCH, DIR/Floortime, ESDM) + logopedia + psicomotricità + DSA. Ambulatorio AUTentico dedicato. Pagina 'lavora con noi' attiva, accetta CV spontanei.",tags:["ASD","ABA","DSA","ADHD"],priority:1},
+  {id:9,nome:"Santagostino Psiche",tipo:"privato",prov:"MI",citta:"Milano (rete multi-sede)",distKm:20,pos:"aperta",titolo:"Psicologo / Psicoterapeuta età evolutiva (P.IVA)",link:"https://www.santagostino.it/lavora-con-noi",come:"santagostino.it/lavora-con-noi\nCerca psicologi con esperienza ASD.",note:"Grande rete poliambulatoriale in espansione (13 anni, 260k pazienti). Divisione Psiche dedicata. Autonomia clinica con supporto organizzativo e flusso pazienti garantito. P.IVA.",tags:["ASD","psicologia clinica"],priority:1},
+  {id:10,nome:"Parole e Movimento",tipo:"privato",prov:"MI",citta:"Lainate (MI)",distKm:32,pos:"aperta",titolo:"Psicologo / Neuropsicologo — équipe DSA accreditata",link:"http://www.paroleemovimentolainate.it/",come:"paroleemovimentolainate.it (contatto)\nAnnuncio Indeed attivo per logopedista — équipe include psicologi.",note:"Studio clinico età evolutiva: NPI, Psicologi, TNPEE, Logopediste. Équipe accreditata ATS Città di Milano e Rhodense per prima certificazione DSA (L.170/2010). DSA, ADHD, DCD, DSL, disturbi cognitivi, parent training, teacher training, PEI/PDP.",tags:["DSA","ADHD","accreditato","neuropsicologia"],priority:2},
+  {id:11,nome:"Centro Psicologia Logopedia DSA Milano",tipo:"privato",prov:"MI",citta:"Milano",distKm:20,pos:"spontanea",titolo:"Psicologo / Neuropsicologo età evolutiva (P.IVA)",link:"https://www.centropsicologicomilano.it/",come:"centropsicologicomilano.it (contatto)",note:"15 anni di attività. DSA, ADHD, ASD, disturbi del linguaggio, ritardi sviluppo, plusdotazione, BES. Accreditato ATS Milano. Collaboratori in libera professione.",tags:["DSA","ADHD","ASD","neuropsicologia"],priority:2},
+  {id:12,nome:"Centro Amamente",tipo:"privato",prov:"MI",citta:"Milano",distKm:20,pos:"spontanea",titolo:"Psicologo / Neuropsicologo età evolutiva",link:"https://centroamamente.it/",come:"centroamamente.it (form contatto)",note:"Primo centro italiano per plusdotazione (dal 2008). NPI età evolutiva, diagnosi differenziale, doppia eccezionalità. Équipe accreditata ATS Milano prima certificazione DSA. Psicologia scolastica.",tags:["DSA","gifted","neuropsicologia"],priority:2},
+  {id:13,nome:"Centro UmanaMente",tipo:"privato",prov:"MI",citta:"Milano",distKm:20,pos:"aperta",titolo:"Psicologo / collaboratore clinico",link:"https://www.centroumanamente.it/lavora-con-noi/",come:"centroumanamente.it/lavora-con-noi — tel. 327 3937664",note:"Centro polispecialistico. DSA, logopedia, psicologia, psichiatria, fisioterapia. Pagina 'Lavora con noi' attiva — verificare posizioni correnti.",tags:["DSA","logopedia"],priority:2},
+  {id:14,nome:"CAB Polidiagnostico",tipo:"privato",prov:"MI",citta:"Milano",distKm:20,pos:"spontanea",titolo:"Neuropsicologo / Psicologo età evolutiva",link:"https://www.cabpolidiagnostico.it/",come:"cabpolidiagnostico.it (form contatto)",note:"Équipe: NPI, psicologo, logopedista, neuropsicologo dedicato ADHD, psicomotricista. Diagnosi DSA, ADHD, cerebrolesioni. Collaboratori LP.",tags:["DSA","ADHD","neuropsicologia"],priority:2},
+  {id:15,nome:"CESCA — Scienza Comportamentale Applicata",tipo:"privato",prov:"MI",citta:"Milano",distKm:20,pos:"spontanea",titolo:"Psicologo Analista del Comportamento (P.IVA)",link:"mailto:segreteria@cescamilano.it",come:"segreteria@cescamilano.it",note:"ASD 0–18, early intensive, supervisione BCBA (partnership Fondazione Sospiro + IESCUM). Master ABA I livello preferenziale. Percorso P.IVA → contratto.",tags:["ABA","ASD","0-18"],priority:2},
+  {id:16,nome:"Cascina Bianca — Centri Bolle Blu",tipo:"privato",prov:"MI",citta:"Milano · Corsico · Cernusco",distKm:18,pos:"aperta",titolo:"Psicologo / TNPEE / Educatore — autismo minori 3–16",link:"https://cascinabianca.org/contatti/lavora-con-noi",come:"cascinabianca.org/lavora-con-noi — bolleblu.milano@cascinabianca.org",note:"Polo Autismo e Disabilità Complesse. Tre sedi. Équipe con psicologi, educatori, TNPEE, tecnici ABA. Annuncio attivo su aggregatori.",tags:["ASD","autismo","0-18"],priority:2},
+  {id:17,nome:"Centro Vela — Ambulatorio NPI",tipo:"privato",prov:"CO",citta:"Como · Capiago · Solbiate · Corrido",distKm:42,pos:"aperta",titolo:"Tecnico ABA / Psicologo età evolutiva",link:"https://www.centrovelacomo.it/",come:"centrovelacomo.it — annuncio Indeed 'Tecnico ABA / Tecnico del Comportamento'",note:"Ambulatorio NPI accreditato Regione Lombardia n.1328. ASD diagnosi + trattamento ABA/PECS/DIR, DSA, ADHD, disturbi del linguaggio 0–5. Quattro sedi in provincia CO. Sito tirocinio OPL.",tags:["ASD","DSA","ABA","NPI","accreditato"],priority:1},
+  {id:18,nome:"Equipe DSA Lecco",tipo:"privato",prov:"LC",citta:"Lecco (LC)",distKm:32,pos:"spontanea",titolo:"Psicologo / Neuropsicologo DSA-ADHD (libera professione)",link:"https://equipedsa.yolasite.com/",come:"equipedsa.yolasite.com (contatto)",note:"Équipe libero-professionale con NPI (già ASST Lecco/Bellano), psicologi cognitivisti, logopediste. DSA, ADHD, diagnosi e trattamento. Collaborano con SC-NPIA ASST Lecco.",tags:["DSA","ADHD","LC"],priority:2},
+  {id:19,nome:"Centro Abaco — Età Evolutiva",tipo:"privato",prov:"BG",citta:"Bergamo (BG)",distKm:38,pos:"spontanea",titolo:"Psicologo / Neuropsicologo età evolutiva (P.IVA)",link:"https://abacocentro.it/",come:"abacocentro.it (form contatto)",note:"Centro polifunzionale a Bergamo. Équipe autorizzata dall'ASST di Bergamo dal 2014 per la prima certificazione diagnostica DSA. DSA, ADHD, disturbi emotivo-relazionali, neuropsicomotricità, area psicologica e linguistica.",tags:["DSA","ADHD","accreditato"],priority:2},
+  {id:20,nome:"Autismo Bergamo — Centro ABA",tipo:"privato",prov:"BG",citta:"Bergamo (BG)",distKm:38,pos:"spontanea",titolo:"Psicologo specializzato spettro autistico",link:"https://www.autismobergamo.com/psicologa-specializzata-spettro-autistico/",come:"autismobergamo.com (contatto)",note:"Centro privato dedicato ASD, bambini e adulti. Terapia ABA, competenze sociali, supporto educativo, parent training, diagnosi adulti. Team in aggiornamento continuo. Cerca profili formati ABA.",tags:["ASD","ABA","autismo"],priority:2},
+  {id:21,nome:"Centro Clinico Integrato Bergamo",tipo:"privato",prov:"BG",citta:"Bergamo (BG)",distKm:38,pos:"spontanea",titolo:"Psicologo dell'età evolutiva",link:"https://centropsicologiabergamo.com/psicologo-eta-evolutiva/",come:"centropsicologiabergamo.com (contatto)",note:"Centro con più psicologi dell'età evolutiva, specializzati su area infantile e adolescenziale. Interventi psicologici e trattamenti integrati per bambini, adolescenti e famiglie.",tags:["età evolutiva","DSA"],priority:3},
+  {id:22,nome:"Centro La Trottola",tipo:"privato",prov:"BG",citta:"Bergamo (BG)",distKm:38,pos:"spontanea",titolo:"Psicologo / Psicoterapeuta età evolutiva",link:"https://www.aifalombardia.org/collaboratori",come:"Tramite board AIFA Lombardia — aifalombardia.org\ntel. 345-0468983 (segreteria h. 15–18)",note:"Centro per l'età evolutiva. Valutazioni e diagnosi ADHD, certificazioni ADHD/DSA, consulenza neurologica. Collaboratore ufficiale AIFA Lombardia (associazione ADHD).",tags:["ADHD","DSA"],priority:3},
+  {id:23,nome:"Centro DSA Lombardia / Centro Autismo ABA",tipo:"privato",prov:"LO",citta:"Codogno · Casalpusterlengo (LO)",distKm:52,pos:"aperta",titolo:"Psicologo / Terapista — Centri DSA, LAPS e Autismo ABA",link:"https://www.dsa-lombardia.it/lavora-con-noi",come:"dsa-lombardia.it/lavora-con-noi (form di candidatura online)",note:"Rete di centri: Centri DSA Lombardia, Centri LAPS, Centri Autismo Lombardia ABA. Sedi a Codogno, Casalpusterlengo e Cremona. Pagina carriere con form dedicato — opportunità aperte dichiarate.",tags:["DSA","ASD","ABA"],priority:2},
+  {id:24,nome:"Sinapsy — Neuropsicologia Lodi",tipo:"privato",prov:"LO",citta:"Lodi (LO)",distKm:38,pos:"spontanea",titolo:"Psicologo / Neuropsicologo età evolutiva",link:"https://www.sinapsylodi.com/",come:"sinapsylodi.com (contatto)",note:"Neuropsicologia età evolutiva e adulta: DSA, ADHD, disturbi del linguaggio, disabilità intellettiva.",tags:["DSA","ADHD","neuropsicologia"],priority:3},
+  {id:25,nome:"HTC Centro Medico",tipo:"privato",prov:"PV",citta:"Stradella (PV)",distKm:55,pos:"spontanea",titolo:"Psicologo / Neuropsicologo età evolutiva",link:"https://www.htcnet.it/",come:"htcnet.it (contatto)",note:"Équipe integrata (NPI, neuropsicologia, psicologia) accreditata ATS Pavia per prima certificazione DSA. Valutazioni ASD anche ad alto funzionamento. Età evolutiva e adulti.",tags:["DSA","ASD","ADHD","accreditato"],priority:3},
+  {id:26,nome:"IRCCS San Gerardo dei Tintori",tipo:"irccs",prov:"MB",citta:"Monza",distKm:2,pos:"lp",titolo:"Psicologo Specialista NPI — Incarichi Libero-Professionali",link:"https://irccs-sangerardo.it",come:"irccs-sangerardo.it → Bandi e Concorsi → Incarichi Libero-Professionali\nBandi ricorrenti (n.7 e n.2 posti in tornate recenti).",note:"⭐⭐ MASSIMA PRIORITÀ — è a Monza. SC Neuropsichiatria Infantile 0–18. Bandi LP per psicologi specialisti NPI ricorrenti. Gli incarichi LP non richiedono specializzazione completata. Da controllare ogni 2 settimane.",tags:["NPI","LP","Monza"],priority:1},
+  {id:27,nome:"IRCCS E. Medea — La Nostra Famiglia",tipo:"irccs",prov:"LC",citta:"Bosisio Parini (LC)",distKm:26,pos:"lp",titolo:"Psicologo cognitivo-comportamentale (LP)",link:"https://lanostrafamiglia.it/chi-siamo/lavora-con-noi",come:"lanostrafamiglia.it/chi-siamo/lavora-con-noi\nCerca annuncio sede Bosisio Parini.",note:"⭐⭐ Il tuo tirocinio attuale — conoscenza interna è un vantaggio decisivo. Annuncio LP psicologo cognitivo-comportamentale attivo. IRCCS con ricerca EEG e collaborazioni UNIMIB. Da presidiare direttamente parlando con i tutor.",tags:["ASD","NPI","LP","EEG"],priority:1},
+  {id:28,nome:"IRCCS Istituto Neurologico Carlo Besta",tipo:"irccs",prov:"MI",citta:"Milano",distKm:22,pos:"aperta",titolo:"Collaboratore Professionale di Ricerca Sanitaria (UOC NPI)",link:"https://istituto-besta.it/lavora-con-noi",come:"istituto-besta.it/lavora-con-noi\nMonitorare Gazzetta Amministrativa per i concorsi.",note:"⭐ Concorsi ricorrenti per Collaboratore Professionale di Ricerca Sanitaria in UOC Neuropsichiatria Infantile e UOC Neurologia dello Sviluppo. Cat. D. NON richiede specializzazione completata — accessibile ora.",tags:["ricerca","NPI","ASD"],priority:1},
+  {id:29,nome:"IRCCS Fondazione Don Gnocchi",tipo:"irccs",prov:"MI",citta:"Milano (SMN e Girola) + 13 centri Lombardia",distKm:22,pos:"aperta",titolo:"Psicologo / TNPEE / Ricercatore — 43 posizioni aperte a rete",link:"https://www.dongnocchi.it/lavora-con-noi",come:"dongnocchi.it/lavora-con-noi (posizioni + manifestazioni di interesse sempre aperte)\nnpi.smn@dongnocchi.it per il Dipartimento NPI età evolutiva.",note:"⭐ Eccellente. Dipartimento Neuropsichiatria e Riabilitazione Età Evolutiva 0–18. Progetti ERISIBS (fratelli ASD ad alto rischio) e RISCALE (robot sociale early ASD) con Politecnico MI: match diretto con EEG + eye-tracking. 13 centri in Lombardia, 43 posizioni aperte a rete su Indeed. Sito tirocinio OPL.",tags:["ASD","EEG","ricerca","0-18"],priority:1},
+  {id:30,nome:"IRCCS Fondazione Mondino",tipo:"irccs",prov:"PV",citta:"Pavia (PV)",distKm:58,pos:"spontanea",titolo:"Psicologo ricercatore — Unità NPI e Neuropsichiatria Adolescenza",link:"https://www.mondino.it/",come:"mondino.it (sezione lavora con noi / concorsi)\nSegreteria NPI: tel. 0382 380211",note:"Istituto Neurologico Nazionale. Unità NPI diretta da Prof. Renato Borgatti / Prof.ssa Simona Orcesi (Univ. Pavia). Attività di ricerca con 2 psicologi e 9 ricercatori. Centro Diurno 'Riapri il Mondo' per adolescenti (14 posti accreditati). Epilessia, malattie rare, neurosviluppo. Convenzionato Università di Pavia.",tags:["NPI","ricerca","neuroscienze"],priority:2},
+  {id:31,nome:"IRCCS Policlinico San Matteo",tipo:"irccs",prov:"PV",citta:"Pavia (PV)",distKm:58,pos:"spontanea",titolo:"Psicologo / Incarichi di lavoro autonomo",link:"https://www.sanmatteo.org/",come:"sanmatteo.org → Concorsi e avvisi\nSelezioni pubbliche per incarichi di lavoro autonomo ricorrenti.",note:"Fondazione IRCCS di diritto pubblico. Ha NPI. Emette regolarmente selezioni pubbliche per incarichi di lavoro autonomo (anche per profili riabilitativi ed età evolutiva). Monitorare.",tags:["NPI","LP"],priority:3},
+  {id:32,nome:"IRCCS Ospedale San Raffaele",tipo:"irccs",prov:"MI",citta:"Milano",distKm:22,pos:"spontanea",titolo:"Psicologo Neurosviluppo / Ricercatore",link:"https://hsr.it/lavora-con-noi",come:"hsr.it/lavora-con-noi — tirocini.hr@hsr.it",note:"NPI 0–18. Il profilo dirigente psicologo richiede specializzazione completata; il percorso ricercatore e tirocinio è accessibile ora.",tags:["NPI","ricerca","0-18"],priority:2},
+  {id:33,nome:"IRCCS Policlinico Ca' Granda",tipo:"irccs",prov:"MI",citta:"Milano",distKm:22,pos:"spontanea",titolo:"Dirigente Psicologo UONPIA / SAPRE",link:"https://www.policlinico.mi.it/",come:"policlinico.mi.it → sezione Concorsi",note:"UONPIA con unità SAPRE per l'intervento precoce. Concorsi per Dirigente Psicologo disciplina psicoterapia. Richiede specializzazione completata — candidatura spontanea nel frattempo.",tags:["NPI","ASD","UONPIA"],priority:3},
+  {id:34,nome:"ASST Papa Giovanni XXIII — SSD Area Disabilità e Autismo",tipo:"asst",prov:"BG",citta:"Bergamo · Borgo Palazzo · Zogno",distKm:38,pos:"lp",titolo:"Psicologo psicoterapeuta — SSD Area Disabilità e Autismo (LP ricorrenti)",link:"https://www.asst-pg23.it/concorsi",come:"asst-pg23.it/concorsi\nAvvisi di procedura comparativa per incarichi LP psicologo (SSD Area Disabilità e Autismo, SC Psicologia, DSMD).",note:"⭐ Ha una SSD dedicata ad Area Disabilità e Autismo che emette avvisi LP per psicologo psicoterapeuta. SC NPI multiprofessionale (NPI, psicologi, TNPEE, logopedisti, assistenti sociali) con poli a Borgo Palazzo e Zogno, consulenze in Patologia Neonatale e Pronto Soccorso. Molto rilevante per il profilo.",tags:["ASD","autismo","NPI","LP"],priority:1},
+  {id:35,nome:"ASST Lecco — SC NPIA e Nucleo Funzionale DSA",tipo:"asst",prov:"LC",citta:"Lecco · Merate · Bellano",distKm:32,pos:"lp",titolo:"Psicologo LP — Nucleo Funzionale DSA e progetti NPIA adolescenti",link:"https://www.asst-lecco.it/amministrazione-trasparente/bandi-di-concorso/concorsi/",come:"asst-lecco.it → Amministrazione trasparente → Bandi di concorso\nAvvisi LP ricorrenti.",note:"⭐ Storico di avvisi LP molto pertinenti: n.2 incarichi LP psicologo per il 'Nucleo funzionale per i disturbi specifici dell'apprendimento (NF DSA)' e n.1 LP psicologo per 'Percorsi clinici integrati ospedalieri e domiciliari nei disturbi psicopatologici negli adolescenti' presso la SC NPIA. Poli: Lecco (Manzoni), Merate (Mandic), Bellano.",tags:["DSA","NPI","LP","0-18"],priority:1},
+  {id:36,nome:"ASST Santi Paolo e Carlo — UONPIA",tipo:"asst",prov:"MI",citta:"Milano (poli Barabino e Val d'Intelvi)",distKm:24,pos:"lp",titolo:"Psicologo LP — 'Psicodiagnosi e trattamento dei disturbi dello sviluppo nei minori'",link:"https://www.asst-santipaolocarlo.it/",come:"asst-santipaolocarlo.iscrizioneconcorsi.it (procedura telematica)\nCodice avviso tipo: DSMD-NPIA-PSIC-PR.1",note:"⭐ Avviso LP molto centrato: progetto 'Psicodiagnosi e trattamento psicologico clinico dei disturbi dello sviluppo e psicologici nei pazienti minori'. IMPORTANTE: ammette candidati iscritti all'ULTIMO anno della scuola di specializzazione — da tenere d'occhio per quando sarai al 3°/4° anno. Ha anche ambulatorio ADHD dedicato e ambulatorio autismo. Concorsi per 5 posti dirigente psicologo NPI/consultori area minori.",tags:["NPI","ADHD","ASD","LP","0-18"],priority:1},
+  {id:37,nome:"ASST Fatebenefratelli-Sacco (incl. Buzzi)",tipo:"asst",prov:"MI",citta:"Milano",distKm:22,pos:"lp",titolo:"Psicologo LP / Borsa di Studio e Ricerca — Polo Autismo",link:"https://asst-fbf-sacco.it/concorsi",come:"asst-fbf-sacco.it/concorsi (Concorsi/Avvisi/Procedure comparative)",note:"Nucleo Funzionale Autismo (Piano Operativo Regionale Autismo) + Progetto AUTER per ASD adulti. Ospedale Buzzi pediatrico nella stessa ASST. Emette regolarmente avvisi LP psicologo e borse di studio e ricerca.",tags:["ASD","autismo","NPI","LP"],priority:1},
+  {id:38,nome:"ASST Brianza",tipo:"asst",prov:"MB",citta:"Vimercate · Desio · Carate · Seregno",distKm:12,pos:"spontanea",titolo:"Psicologo UONPIA / Dirigente Psicologo",link:"https://asst-brianza.it",come:"asst-brianza.it → Concorsi\nCandidatura spontanea + monitoraggio bandi.",note:"UOC NPI 0–18, équipe multidisciplinare. Copre l'area a te più vicina. Sito di tirocinio per la specializzazione in neuropsicologia. Il dirigente psicologo richiede spec. completata, ma monitorare LP e borse.",tags:["UONPIA","NPI","DSA"],priority:2},
+  {id:39,nome:"ASST Bergamo Ovest",tipo:"asst",prov:"BG",citta:"Treviglio · Bonate Sotto · Romano di L.",distKm:30,pos:"aperta",titolo:"Dirigente Psicologo (tempo determinato) + psicologi ADHD lavoro autonomo",link:"https://www.asst-bgovest.it/459.asp",come:"asst-bgovest.it/459.asp (concorsi, avvisi e comunicazioni)",note:"Avviso per titoli e colloquio per rapporti a tempo determinato come dirigente psicologo disciplina psicologia/psicoterapia (tornata luglio 2026 conclusa — verificare nuova). Ha NPI a Bonate Sotto e Casa di Comunità Dalmine. Anche avvisi per psicologi ADHD in lavoro autonomo.",tags:["NPI","ADHD"],priority:2},
+  {id:40,nome:"ASST Lariana — UOC NPI",tipo:"asst",prov:"CO",citta:"Como · Cantù · Erba · Menaggio",distKm:42,pos:"spontanea",titolo:"Psicologo NPI / Dirigente Psicologo",link:"https://www.asst-lariana.it",come:"asst-lariana.it + asst-lariana.iscrizioneconcorsi.it",note:"Copre tutta la provincia di Como 0–17. Poli: Como (Sant'Anna), Cantù, Erba, Menaggio. Équipe con NPI, psicologi, logopedisti, TNPEE, fisioterapisti.",tags:["NPI","ASD","DSA"],priority:2},
+  {id:41,nome:"ASST Lodi",tipo:"asst",prov:"LO",citta:"Lodi · Codogno · Casalpusterlengo",distKm:38,pos:"lp",titolo:"Psicologo LP e Borse di Studio (avvisi frequenti)",link:"https://www.asst-lodi.it/bando-di-concorso",come:"asst-lodi.iscrizioneconcorsi.it (domanda solo online con SPID)\nasst-lodi.it → Bandi di concorso / Aggregatore concorsi",note:"ASST molto attiva su incarichi LP psicologo (progetti RISE, Così ti Accolgo, Servizio Dipendenze) e borse di studio per psicologi. Ha anche emesso LP per TNPEE età evolutiva. Compenso LP tipico ~22 €/h lordi, ~30 h/sett. Buon canale d'ingresso.",tags:["LP","psicologia clinica"],priority:2},
+  {id:42,nome:"ASST Bergamo Est",tipo:"asst",prov:"BG",citta:"Seriate · Alzano Lombardo",distKm:42,pos:"spontanea",titolo:"Psicologo NPI / Dirigente Psicologo",link:"https://www.asst-bergamoest.it/it/lavora-con-noi",come:"asst-bergamoest.it → Lavora con noi / Concorsi",note:"SC NPI nell'area bergamasca orientale. Partecipa a concorsi in forma aggregata con ASST Papa Giovanni XXIII e Bergamo Ovest — un solo bando può coprire più aziende.",tags:["NPI"],priority:3},
+  {id:43,nome:"ASST Rhodense — UONPIA",tipo:"asst",prov:"MI",citta:"Rho · Garbagnate · Limbiate · Lentate",distKm:28,pos:"spontanea",titolo:"Psicologo UONPIA / Dirigente Psicologo",link:"https://asst-rhodense.it",come:"asst-rhodense.it → Concorsi",note:"Vasta UONPIA con centri semiresidenziali ASD (Alice a Rho, Itaca a Limbiate). Copre anche Limbiate e Lentate sul Seveso, quindi parte della Brianza.",tags:["UONPIA","ASD","NPI"],priority:3},
+  {id:44,nome:"ASST Grande Ospedale Niguarda",tipo:"asst",prov:"MI",citta:"Milano",distKm:20,pos:"spontanea",titolo:"Psicologo UONPIA / Ricercatore",link:"https://ospedaleniguarda.it",come:"ospedaleniguarda.it → Lavora con noi / Concorsi",note:"SC NPIA universitaria + centro semiresidenziale per disturbi dello sviluppo e autismo infantile (via Cherasco). Sito tirocinio OPL per psicologia, psicoterapia e neuropsicologia.",tags:["NPI","ASD"],priority:3},
+  {id:45,nome:"ASST Pavia",tipo:"asst",prov:"PV",citta:"Voghera · Vigevano · Stradella",distKm:60,pos:"spontanea",titolo:"Psicologo UONPIA / LP",link:"https://www.asst-pavia.it/",come:"asst-pavia.it → Concorsi e avvisi",note:"UONPIA territoriale della provincia di Pavia. Distanza notevole da Monza — considerare solo per opportunità particolarmente rilevanti.",tags:["NPI","UONPIA"],priority:3},
+  {id:46,nome:"Consorzio SiR — Solidarietà in Rete",tipo:"coop",prov:"MI",citta:"Milano · Seregno (MB)",distKm:15,pos:"aperta",titolo:"Psicologo / Educatore — Servizio Riabilitazione 0–18 e poliambulatori",link:"https://consorziosir.it/lavora-con-noi/",come:"consorziosir.it/lavora-con-noi (form)\nriabilitazione@consorziosir.it — tel. 02 8440451\nSede MB: via Lamarmora 14, Seregno — tel. 0362 325342",note:"⭐ Rete di 9–11 cooperative nata con Anffas Milano. Servizio di Riabilitazione accreditato Regione Lombardia per disabilità intellettiva e relazionale, con programmi 0–5, 6–18 e adulti: disturbi evolutivi specifici, alterazione globale dello sviluppo psicologico, disturbi comportamentali. Poliambulatori e consultori accreditati. Capofila progetto 'Autismo e Qualità della Vita' e Case Management Autismo per il Comune di Milano. Ha sede anche a Seregno (MB).",tags:["ASD","autismo","0-18","accreditato"],priority:1},
+  {id:47,nome:"Cascina San Vincenzo Onlus",tipo:"coop",prov:"MB",citta:"Concorezzo (MB)",distKm:8,pos:"spontanea",titolo:"Psicologo — ambulatorio autismo accreditato",link:"mailto:mauro.rivolta@cascinasanvincenzo.org",come:"mauro.rivolta@cascinasanvincenzo.org — tel. 338 7453831",note:"⭐ A 8 km da Monza. Ambulatorio Autismo accreditato Regione Lombardia. 17 professionisti della riabilitazione (psicologi, educatori, logopedisti, psicomotricisti). Presente sulla bacheca SINPIA.",tags:["ASD","autismo","accreditato"],priority:1},
+  {id:48,nome:"Fondazione Sacra Famiglia",tipo:"coop",prov:"MI",citta:"Cesano Boscone (MI) + Milano",distKm:28,pos:"aperta",titolo:"Educatore CDD Autismo / Ambulatorio Autismo (LM Psicologia accettata)",link:"https://zinrec.intervieweb.it/sacrafamiglia/it/career",come:"Portale carriere: zinrec.intervieweb.it/sacrafamiglia\nsacrafamiglia.org/opportunita-di-lavoro",note:"Non-profit sociosanitaria con 20+ sedi. CDD Autismo a Cesano Boscone e ambulatori Counseling Autismo con posizioni aperte. La laurea magistrale in Psicologia è categoria esplicitamente accettata nel portale.",tags:["ASD","autismo"],priority:1},
+  {id:49,nome:"Fondazione Renato Piatti",tipo:"coop",prov:"MI",citta:"Milano (Centro Mafalda Luce) + Varese",distKm:22,pos:"aperta",titolo:"Psicologo ASD / Ricercatore clinico",link:"https://fondazionepiatti.it/lavora-con-noi/",come:"selezione@fondazionepiatti.it (oggetto: 'Candidatura spontanea')\nfondazionepiatti.it/lavora-con-noi — tel. 0332 281025",note:"⭐ Punto di riferimento in Lombardia per disabilità e disturbi dello spettro autistico. Gestisce il Centro Mafalda Luce di Milano (diagnosi + assistenza + ricerca, con Univ. Campus Biomedico Roma). Feed di posizioni aperte attivo + invito esplicito alle candidature spontanee. Possibilità di lavoro ibrido su alcuni ruoli.",tags:["ASD","ricerca","diagnosi"],priority:1},
+  {id:50,nome:"AIAS Città di Monza ETS",tipo:"coop",prov:"MB",citta:"Monza",distKm:2,pos:"spontanea",titolo:"Psicologo / équipe riabilitativa IDR",link:"mailto:help@aiasmonza.it",come:"help@aiasmonza.it (contatto da bacheca SINPIA)",note:"A Monza. Istituto di Riabilitazione accreditato Regione Lombardia. Équipe con NPI, psicologi, fisiatri, terapisti della riabilitazione. Ha reclutato NPI tramite SINPIA.",tags:["NPI","riabilitazione","Monza"],priority:2},
+  {id:51,nome:"Spazio Aperto Servizi",tipo:"coop",prov:"MI",citta:"Milano + servizi in MB",distKm:20,pos:"spontanea",titolo:"Psicologo / Educatore specializzato ASD",link:"https://spazioapertoservizi.org",come:"spazioapertoservizi.org → Lavora con noi\nluciano.cattaneo@spazioapertoservizi.org",note:"Servizio 'Spazi Piccoli' per ASD 0–13 e servizi diurni autismo su Milano e Monza-Brianza. Parent training, consulenza scolastica. Partner del Consorzio SiR sul progetto autismo.",tags:["ASD","0-18"],priority:2},
+  {id:52,nome:"Anffas Bergamo ETS-APS",tipo:"coop",prov:"BG",citta:"Bergamo (BG)",distKm:38,pos:"spontanea",titolo:"Psicologo — valutazione e presa in carico minori con autismo",link:"https://www.anffas.bg.it/",come:"info@anffas.bg.it — tel. 035 243609",note:"Anffas opera a Bergamo dal 1964. Il modello Anffas per i minori con autismo prevede lo psicologo in équipe nella fase valutativa, supervisione al trattamento educativo-riabilitativo, parent training e gruppi genitori. Rete nazionale con 169 associazioni locali.",tags:["ASD","autismo","0-18"],priority:2},
+  {id:53,nome:"Cascina Biblioteca",tipo:"coop",prov:"MI",citta:"Milano",distKm:18,pos:"aperta",titolo:"Educatore professionale — CDD Ferraris Autismo",link:"https://cascinabiblioteca.it",come:"cascinabiblioteca.it → Lavora con noi",note:"Cooperativa sociale con CDD 'Ferraris Autismo'. Aperture ricorrenti per educatori; profilo psicologo valutabile. Partner Consorzio SiR sul progetto autismo.",tags:["autismo","ASD"],priority:3},
+  {id:54,nome:"Cooperativa Fabula Onlus",tipo:"coop",prov:"MI",citta:"Milano + Monza",distKm:18,pos:"spontanea",titolo:"Psicologo / Terapista ASD — Centro Domino",link:"https://fabulaonlus.it",come:"fabulaonlus.it → contatti / lavora con noi",note:"Capofila del progetto 'Autismo e Qualità della Vita' con Consorzio SiR. Centro 'Domino' per ASD + centro Kaleidos di psicoterapia. Presente a Milano e Monza.",tags:["ASD","autismo"],priority:2},
+  {id:55,nome:"Cooperativa Ippogrifo Onlus",tipo:"coop",prov:"MB",citta:"Muggiò · Lissone (MB)",distKm:6,pos:"spontanea",titolo:"Psicologo età evolutiva / valutazione ASD",link:"mailto:ippogrifo.muggio@gmail.com",come:"ippogrifo.muggio@gmail.com — tel. 340 1586830 / 039 6368990",note:"A pochi km da Monza. Valutazione e terapia in età evolutiva incluso autismo. Équipe con TNPEE, pedagogista, psicologo.",tags:["ASD","età evolutiva","Monza"],priority:2},
+  {id:56,nome:"La Nostra Famiglia — sedi LC e CO",tipo:"coop",prov:"LC",citta:"Lecco · Ponte Lambro (CO)",distKm:30,pos:"spontanea",titolo:"Psicologo / TNPEE / Assistente Sociale",link:"https://lanostrafamiglia.it/chi-siamo/lavora-con-noi",come:"lecco@lanostrafamiglia.it\nlanostrafamiglia.it/chi-siamo/lavora-con-noi",note:"Sedi di Lecco e Ponte Lambro (CO), collegate all'IRCCS Medea. DSA, ADHD, ASD, riabilitazione età evolutiva. Anche partner della rete Reti Autismo per l'inserimento lavorativo.",tags:["NPI","ASD","DSA"],priority:2},
+  {id:57,nome:"Cooperativa L'Arcobaleno",tipo:"coop",prov:"LC",citta:"Nibionno · Lecco (LC)",distKm:20,pos:"spontanea",titolo:"Educatore / Operatore NPI — Comunità Kairos e CDT CasaVincenza",link:"https://larcobaleno.coop",come:"larcobaleno.coop → Lavora con noi",note:"Gestisce la Comunità Terapeutica Kairos (Nibionno) e il Centro Diurno Terapeutico 'CasaVincenza' (Lecco) per conto della UONPIA di ASST Lecco. Adolescenti 14–18 con psicopatologia. Équipe multiprofessionale.",tags:["NPI","0-18"],priority:3},
+  {id:58,nome:"AIAS Milano Onlus",tipo:"coop",prov:"MI",citta:"Milano",distKm:20,pos:"spontanea",titolo:"Psicologo / Educatore — disabilità e autismo",link:"https://www.aiasmilano.it/",come:"aiasmilano.it → Lavora con noi",note:"Partner del progetto 'Autismo e Qualità della Vita' del Consorzio SiR. Servizi riabilitativi ed educativi per disabilità. Recluta educatori con continuità.",tags:["autismo","riabilitazione"],priority:3},
+  {id:59,nome:"La Grande Casa scs",tipo:"coop",prov:"MB",citta:"Monza · Busnago (MB)",distKm:4,pos:"aperta",titolo:"Educatore scolastico / Assistente alla comunicazione (BES)",link:"https://it.indeed.com/q-psicologo-l-cogliate,-lombardia-offerte-lavoro.html",come:"Annunci Indeed 'La Grande Casa' — sedi Monza, Busnago, Carate Brianza",note:"Cooperativa con posizioni ricorrenti per educatori scolastici e assistenti alla comunicazione per alunni con disabilità e BES. Coerente con la tua esperienza triennale come educatrice di sostegno. Utile come ponte o integrazione part-time.",tags:["0-18","BES"],priority:3},
+  {id:60,nome:"Università Bicocca — Child&BabyLab",tipo:"ricerca",prov:"MI",citta:"Milano",distKm:20,pos:"borsa",titolo:"Borsa di Studio / Assegno di Ricerca — EEG e Eye-Tracking sviluppo",link:"https://www.unimib.it/",come:"unimib.it → Ateneo → Gare e concorsi (assegni di ricerca / borse di studio)\nbandi.mur.gov.it\nContatto diretto: Prof.ssa Viola Macchi Cassia (Dip. Psicologia)",note:"⭐⭐ MATCH ECCELLENTE. Il Bicocca Child&BabyLab conduce un progetto PNRR (Missione 4 C2 Inv. 1.1) su pattern ritmici e sviluppo neuro-cognitivo con EEG infantile ed eye-tracking — esattamente le tue competenze tecniche. In passato ha finanziato borse su ASD e WHO Caregiver Skills Training. Sei già laureata Bicocca: vantaggio di rete. Contattare direttamente la PI oltre a monitorare i bandi.",tags:["EEG","eye-tracking","ASD","ricerca","PNRR"],priority:1},
+  {id:61,nome:"Università Vita-Salute San Raffaele",tipo:"ricerca",prov:"MI",citta:"Milano",distKm:22,pos:"borsa",titolo:"Ricercatore RTT — GSD 11/PSIC-01 Psicologia generale, neuropsicologia e neuroscienze cognitive",link:"https://www.unisr.it/",come:"unisr.it → Lavora con noi / Bandi\nAvvisi pubblicati in Gazzetta Ufficiale.",note:"⭐ Ha bandito posizioni di ricercatore a tempo determinato in tenure track nel settore Psicologia generale, NEUROPSICOLOGIA e neuroscienze cognitive — settore esattamente corrispondente al tuo profilo. Monitorare i nuovi bandi e le borse dottorali.",tags:["neuropsicologia","ricerca","neuroscienze"],priority:1},
+  {id:62,nome:"Università di Pavia — Sez. Neuroscienze Cliniche",tipo:"ricerca",prov:"PV",citta:"Pavia (PV)",distKm:58,pos:"borsa",titolo:"Assegno di ricerca — Unità Neuropsichiatria Infantile",link:"https://www.mondino.it/universita-di-pavia/",come:"unipv.it → concorsi e assegni di ricerca\nbandi.mur.gov.it\nUnità NPI: Prof.ssa Simona Orcesi",note:"Dipartimento di Scienze del Sistema Nervoso e del Comportamento, Sezione Neuroscienze Cliniche, convenzionato con IRCCS Mondino. Unità NPI dedicata con scuola di specializzazione in NPI e corso di laurea in Logopedia. Distanza elevata, ma forte per la ricerca.",tags:["NPI","ricerca","neuroscienze"],priority:3},
+  {id:63,nome:"Università Statale Milano — Dip. Psicologia",tipo:"ricerca",prov:"MI",citta:"Milano",distKm:22,pos:"borsa",titolo:"Assegno di Ricerca — Neurosviluppo atipico",link:"https://www.unimi.it/",come:"unimi.it → Gare e concorsi / assegni di ricerca\nbandi.mur.gov.it",note:"Ricerca su ASD e neurosviluppo, incluse collaborazioni su sindrome di Rett. Monitorare bandi M-PSI/04 e MED/39.",tags:["ricerca","ASD","neurosviluppo"],priority:2}
+];
+
+/* ══════════════════════════════════
+   INDEXEDDB — salvataggio persistente
+   Funziona su iOS/iPadOS anche da file://
+══════════════════════════════════ */
+var DB_NAME='jobtracker',DB_VER=1,DB_STORE='userdata';
+var db=null;
+var stati={},note={};
+
+function initDB(cb){
+  var req=indexedDB.open(DB_NAME,DB_VER);
+  req.onupgradeneeded=function(e){
+    e.target.result.createObjectStore(DB_STORE,{keyPath:'key'});
+  };
+  req.onsuccess=function(e){
+    db=e.target.result;
+    loadFromDB(cb);
+  };
+  req.onerror=function(){
+    // Fallback silenzioso se IndexedDB non disponibile
+    cb && cb();
+  };
+}
+function loadFromDB(cb){
+  if(!db){cb&&cb();return;}
+  var tx=db.transaction(DB_STORE,'readonly');
+  var store=tx.objectStore(DB_STORE);
+  var r1=store.get('stati');
+  var r2=store.get('note');
+  var done=0;
+  function check(){done++;if(done===2)cb&&cb();}
+  r1.onsuccess=function(){if(r1.result)stati=r1.result.val||{};check();};
+  r1.onerror=check;
+  r2.onsuccess=function(){if(r2.result)note=r2.result.val||{};check();};
+  r2.onerror=check;
+}
+function saveToDB(){
+  if(!db) return;
+  var tx=db.transaction(DB_STORE,'readwrite');
+  var store=tx.objectStore(DB_STORE);
+  store.put({key:'stati',val:stati});
+  store.put({key:'note',val:note});
+}
+
+/* ══════════════════════════════════
+   MAPS
+══════════════════════════════════ */
+var TIPO_ICON={privato:'🏥',irccs:'🔬',asst:'🏨',coop:'🤝',ricerca:'📚'};
+var TIPO_L={privato:'Privato/Poli.',irccs:'IRCCS',asst:'ASST/Ospedale',coop:'Cooperativa/Fondazione',ricerca:'Università/Ricerca'};
+var TIPO_BC={privato:'bp',irccs:'bi',asst:'ba',coop:'bc',ricerca:'br'};
+var TIPO_IC={privato:'ci-privato',irccs:'ci-irccs',asst:'ci-asst',coop:'ci-coop',ricerca:'ci-ricerca'};
+var POS_L={aperta:'Aperta ora',spontanea:'Candidatura spontanea',lp:'LP/incarico',borsa:'Borsa/Assegno'};
+var POS_BC={aperta:'pb-aperta',spontanea:'pb-spontanea',lp:'pb-lp',borsa:'pb-borsa'};
+var POS_DOT={aperta:'🟢 ',lp:'🟡 ',borsa:'🔵 ',spontanea:''};
+var STATO_L={'':'—','da_candidare':'📋 Da candidare','candidato':'✉️ Candidato/a','risposta':'📬 Risposta ricevuta','colloquio':'🗓 Colloquio','scartato':'❌ Scartato/a'};
+var STATO_DC={'':'','da_candidare':'sd-da_candidare','candidato':'sd-candidato','risposta':'sd-risposta','colloquio':'sd-colloquio','scartato':'sd-scartato'};
+var TAG_C={DSA:'tb',ADHD:'tb',ASD:'tg',ABA:'tg','0-18':'to',ricerca:'to',EEG:'to',PNRR:'to',LP:'to',NPI:'tr',accreditato:'tg'};
+
+/* ══════════════════════════════════
+   FILTER STATE
+══════════════════════════════════ */
+var fTipo='',fPos='',fProv='',fDist=80;
+var currentDetailId=null;
+
+function setChip(btn){
+  var filter=btn.dataset.filter;
+  var val=btn.dataset.val;
+  // Deactivate chips of same filter group
+  document.querySelectorAll('.fchip[data-filter="'+filter+'"]').forEach(function(c){c.classList.remove('active');});
+  btn.classList.add('active');
+  if(filter==='tipo') fTipo=val;
+  else if(filter==='pos') fPos=val;
+  else if(filter==='prov') fProv=val;
+  applyFilters();
+}
+function onSlider(){
+  fDist=parseInt(document.getElementById('distSlider').value);
+  document.getElementById('distVal').textContent=fDist>=80?'Tutte':fDist+' km';
+  applyFilters();
+}
+function applyFilters(){
+  var q=document.getElementById('searchQ').value.toLowerCase().trim();
+  var filtered=DATA.filter(function(d){
+    if(fTipo&&d.tipo!==fTipo) return false;
+    if(fPos&&d.pos!==fPos) return false;
+    if(fProv&&d.prov!==fProv) return false;
+    if(fDist<80&&d.distKm>fDist) return false;
+    if(q){
+      var h=(d.nome+' '+d.citta+' '+d.titolo+' '+d.note+' '+(d.tags||[]).join(' ')+' '+(note[d.id]||'')).toLowerCase();
+      if(h.indexOf(q)===-1) return false;
+    }
+    return true;
+  });
+  renderCards(filtered);
+}
+
+/* ══════════════════════════════════
+   RENDER CARDS
+══════════════════════════════════ */
+function renderCards(items){
+  var list=document.getElementById('cardList');
+  var empty=document.getElementById('emptyState');
+  list.innerHTML='';
+  if(!items.length){empty.style.display='block';updatePills();return;}
+  empty.style.display='none';
+  // Group
+  var g1=[],g2=[],g3=[];
+  items.forEach(function(d){
+    if(d.priority===1)g1.push(d);
+    else if(d.priority===2)g2.push(d);
+    else g3.push(d);
+  });
+  var groups=[{lbl:'🌟 Alta priorità',items:g1},{lbl:'👍 Buona corrispondenza',items:g2},{lbl:'📌 Da monitorare',items:g3}];
+  groups.forEach(function(g){
+    if(!g.items.length) return;
+    var hdr=document.createElement('div');
+    hdr.className='section-hdr';
+    hdr.textContent=g.lbl+' ('+g.items.length+')';
+    list.appendChild(hdr);
+    g.items.forEach(function(d){list.appendChild(makeCard(d));});
+  });
+  updatePills();
+}
+
+function makeCard(d){
+  var st=stati[d.id]||'';
+  var card=document.createElement('div');
+  card.className='card';
+  card.onclick=function(){openDetail(d.id);};
+  var statoHtml=st?'<span class="stato-dot '+STATO_DC[st]+'">'+STATO_L[st]+'</span>':'';
+  card.innerHTML=
+    '<div class="card-body">'+
+      '<div class="card-top">'+
+        '<div class="ci '+TIPO_IC[d.tipo]+'">'+TIPO_ICON[d.tipo]+'</div>'+
+        '<div class="card-meta">'+
+          '<div class="cn">'+d.nome+'</div>'+
+          '<div class="cs">'+d.citta+' · '+d.distKm+' km</div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="badges">'+
+        '<span class="badge '+TIPO_BC[d.tipo]+'">'+TIPO_L[d.tipo]+'</span>'+
+        '<span class="pb '+POS_BC[d.pos]+'">'+POS_DOT[d.pos]+POS_L[d.pos]+'</span>'+
+      '</div>'+
+      '<div style="margin-top:5px;font-size:12px;color:var(--tm);overflow:hidden;white-space:nowrap;text-overflow:ellipsis">'+d.titolo+'</div>'+
+    '</div>'+
+    '<div class="card-foot">'+
+      '<span class="cf-left">📍 '+d.prov+'</span>'+
+      '<div class="cf-right">'+statoHtml+'<span class="chevron">›</span></div>'+
+    '</div>';
+  return card;
+}
+
+/* ══════════════════════════════════
+   PILLS
+══════════════════════════════════ */
+function updatePills(){
+  var aperte=DATA.filter(function(d){return d.pos==='aperta';}).length;
+  var lp=DATA.filter(function(d){return d.pos==='lp';}).length;
+  var cand=Object.values(stati).filter(function(v){return v==='candidato';}).length;
+  var risp=Object.values(stati).filter(function(v){return v==='risposta';}).length;
+  var coll=Object.values(stati).filter(function(v){return v==='colloquio';}).length;
+  var h='<span class="pill pill-g">'+aperte+' aperte</span>'+
+    '<span class="pill pill-o">'+lp+' LP</span>';
+  if(cand>0)h+='<span class="pill pill-b">✉️ '+cand+'</span>';
+  if(risp>0)h+='<span class="pill pill-g">📬 '+risp+'</span>';
+  if(coll>0)h+='<span class="pill pill-b">🗓 '+coll+'</span>';
+  document.getElementById('pills').innerHTML=h;
+  // Settings stats
+  var st=document.getElementById('sgTot');
+  if(st){
+    document.getElementById('sgTot').textContent=DATA.length;
+    document.getElementById('sgCand').textContent=cand;
+    document.getElementById('sgRisp').textContent=risp;
+    document.getElementById('sgColl').textContent=coll;
+    document.getElementById('sgDb').textContent=DATA.length;
+  }
+}
+
+/* ══════════════════════════════════
+   DETAIL VIEW
+══════════════════════════════════ */
+function openDetail(id){
+  currentDetailId=id;
+  var d=DATA.find(function(x){return x.id===id;});
+  if(!d) return;
+  document.getElementById('detailNavTitle').textContent=d.nome;
+  var st=stati[id]||'';
+  var nt=note[id]||'';
+  var tagsHtml='';
+  if(d.tags&&d.tags.length){
+    tagsHtml='<div class="dc-header">Competenze ricercate</div><div class="tag-wrap">'+
+      d.tags.map(function(t){return '<span class="tag '+(TAG_C[t]||'tg')+'">'+t+'</span>';}).join('')+
+    '</div>';
+  }
+  var scroll=document.getElementById('detailScroll');
+  scroll.innerHTML=
+    '<div class="detail-hero">'+
+      '<div class="dh-icon '+TIPO_IC[d.tipo]+'">'+TIPO_ICON[d.tipo]+'</div>'+
+      '<div class="dh-name">'+d.nome+'</div>'+
+      '<div class="dh-sub">'+d.citta+' · Provincia '+d.prov+' · '+d.distKm+' km da Monza</div>'+
+      '<div class="dh-badges">'+
+        '<span class="badge '+TIPO_BC[d.tipo]+'">'+TIPO_L[d.tipo]+'</span>'+
+        '<span class="pb '+POS_BC[d.pos]+'">'+POS_DOT[d.pos]+POS_L[d.pos]+'</span>'+
+      '</div>'+
+    '</div>'+
+    '<div class="detail-card">'+
+      '<div class="dc-header">Titolo posizione</div>'+
+      '<div class="dc-body">'+d.titolo+'</div>'+
+    '</div>'+
+    '<div class="detail-card">'+
+      '<div class="dc-header">Note sul profilo</div>'+
+      '<div class="dc-body note-style">'+d.note+'</div>'+
+      tagsHtml+
+    '</div>'+
+    '<div class="detail-card">'+
+      '<div class="dc-header">Come candidarsi</div>'+
+      '<div class="dc-body">'+d.come.replace(/\n/g,'<br>')+'</div>'+
+      '<a class="dc-link" href="'+d.link+'" target="_blank" rel="noopener">🔗 Apri sito / candidatura</a>'+
+    '</div>'+
+    '<div class="stato-card">'+
+      '<div class="stato-lbl">Il mio stato</div>'+
+      '<select class="stato-sel" id="detailStato">'+
+        Object.entries(STATO_L).map(function(e){return '<option value="'+e[0]+'"'+(e[0]===st?' selected':'')+'>'+e[1]+'</option>';}).join('')+
+      '</select>'+
+      '<div class="note-lbl">Le mie note</div>'+
+      '<textarea class="note-ta" id="detailNote" placeholder="Appunti, contatti, feedback ricevuti…">'+nt+'</textarea>'+
+      '<div class="save-row">'+
+        '<button class="save-main" id="detailSaveBtn" onclick="saveDetail()">Salva</button>'+
+      '</div>'+
+    '</div>';
+  showView('detail');
+  scroll.scrollTop=0;
+  document.getElementById('saveNavBtn').textContent='Salva';
+  document.getElementById('saveNavBtn').style.background='';
+}
+
+function saveDetail(){
+  if(!currentDetailId) return;
+  var stEl=document.getElementById('detailStato');
+  var ntEl=document.getElementById('detailNote');
+  if(!stEl||!ntEl) return;
+  stati[currentDetailId]=stEl.value;
+  note[currentDetailId]=ntEl.value;
+  saveToDB();
+  // Visual feedback
+  var btn=document.getElementById('detailSaveBtn');
+  var navBtn=document.getElementById('saveNavBtn');
+  if(btn){btn.textContent='✓ Salvato';btn.classList.add('save-ok');setTimeout(function(){btn.textContent='Salva';btn.classList.remove('save-ok');},1800);}
+  if(navBtn){navBtn.textContent='✓';navBtn.style.background='var(--su)';setTimeout(function(){navBtn.textContent='Salva';navBtn.style.background='';},1800);}
+  updatePills();
+}
+
+/* ══════════════════════════════════
+   NAVIGATION
+══════════════════════════════════ */
+var prevTab='list';
+function showTab(tab){
+  prevTab=tab;
+  if(tab==='list') showView('list');
+  else if(tab==='settings') showView('settings');
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  var el=document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1));
+  if(el) el.classList.add('active');
+  document.getElementById('tabbar').style.display='';
+}
+function showList(){
+  showView('list');
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
+  document.getElementById('tabList').classList.add('active');
+  document.getElementById('tabbar').style.display='';
+  applyFilters();
+}
+function showView(name){
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');});
+  document.getElementById('view'+name.charAt(0).toUpperCase()+name.slice(1)).classList.add('active');
+  if(name==='detail') document.getElementById('tabbar').style.display='none';
+}
+function openUrl(url){window.open(url,'_blank');}
+
+/* ══════════════════════════════════
+   SERVICE WORKER
+══════════════════════════════════ */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(function(){});
+}
+
+/* ══════════════════════════════════
+   INIT
+══════════════════════════════════ */
+initDB(function(){
+  applyFilters();
+  updatePills();
+});
+</script>
+</body>
+</html>
