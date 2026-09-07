@@ -79,6 +79,16 @@ input[type=search]::placeholder{color:var(--tm)}
 .batch-tab.active .batch-count{background:var(--ac);color:#fff}
 
 /* filter sections */
+/* filter toggle + collapsible panel */
+.filter-toggle-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.filter-toggle-btn{display:flex;align-items:center;gap:6px;background:var(--s2);border:.5px solid var(--sep);border-radius:20px;padding:6px 12px;font-size:13px;font-weight:600;color:var(--t2);cursor:pointer;font-family:inherit}
+.filter-toggle-btn:active{opacity:.7}
+.filter-toggle-btn.has-active{background:var(--ac);color:#fff;border-color:var(--ac)}
+.filter-badge{background:var(--da);color:#fff;font-size:10px;font-weight:700;border-radius:9px;padding:1px 6px;min-width:16px;text-align:center}
+.filter-toggle-btn.has-active .filter-badge{background:rgba(255,255,255,.3)}
+.chevron-toggle{font-size:10px;transition:transform .2s;display:inline-block}
+.chevron-toggle.open{transform:rotate(180deg)}
+.filters-panel{display:flex;flex-direction:column;gap:6px;padding-top:2px;border-top:.5px solid var(--sep);margin-top:2px}
 .filter-section{margin-top:4px}
 .filter-label{font-size:11px;font-weight:600;color:var(--tm);text-transform:uppercase;letter-spacing:.05em;padding:0 2px 4px}
 .filter-hint{font-weight:400;text-transform:none;letter-spacing:0;color:var(--tm);opacity:.7}
@@ -219,61 +229,72 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;heigh
       <input type="search" id="searchQ" placeholder="Cerca struttura, città, competenza…" oninput="applyFilters()" autocomplete="off" autocorrect="off" spellcheck="false">
     </div>
 
-    <div class="filter-section">
-      <div class="filter-label">Struttura</div>
-      <div class="filter-chips">
-        <button class="fchip" data-group="tipo" data-val="privato" onclick="toggleSingleChip(this)">🏥 Privato</button>
-        <button class="fchip" data-group="tipo" data-val="irccs" onclick="toggleSingleChip(this)">🔬 IRCCS</button>
-        <button class="fchip" data-group="tipo" data-val="asst" onclick="toggleSingleChip(this)">🏨 ASST</button>
-        <button class="fchip" data-group="tipo" data-val="coop" onclick="toggleSingleChip(this)">🤝 Coop.</button>
-        <button class="fchip" data-group="tipo" data-val="ricerca" onclick="toggleSingleChip(this)">📚 Ricerca</button>
-      </div>
-    </div>
-
-    <div class="filter-section">
-      <div class="filter-label">Posizione</div>
-      <div class="filter-chips">
-        <button class="fchip" data-group="pos" data-val="aperta" onclick="toggleSingleChip(this)">🟢 Aperta ora</button>
-        <button class="fchip" data-group="pos" data-val="lp" onclick="toggleSingleChip(this)">🟡 LP/incarico</button>
-        <button class="fchip" data-group="pos" data-val="borsa" onclick="toggleSingleChip(this)">🔵 Borsa</button>
-        <button class="fchip" data-group="pos" data-val="spontanea" onclick="toggleSingleChip(this)">⚪ Spontanea</button>
-      </div>
-    </div>
-
-    <div class="filter-section">
-      <div class="filter-label">Provincia <span class="filter-hint">(più scelte possibili)</span></div>
-      <div class="filter-chips">
-        <button class="fchip" data-group="prov" data-val="MI" onclick="toggleMultiChip(this)">📍 MI</button>
-        <button class="fchip" data-group="prov" data-val="MB" onclick="toggleMultiChip(this)">📍 MB</button>
-        <button class="fchip" data-group="prov" data-val="LC" onclick="toggleMultiChip(this)">📍 LC</button>
-        <button class="fchip" data-group="prov" data-val="CO" onclick="toggleMultiChip(this)">📍 CO</button>
-        <button class="fchip" data-group="prov" data-val="BG" onclick="toggleMultiChip(this)">📍 BG</button>
-        <button class="fchip" data-group="prov" data-val="PV" onclick="toggleMultiChip(this)">📍 PV</button>
-        <button class="fchip" data-group="prov" data-val="LO" onclick="toggleMultiChip(this)">📍 LO</button>
-      </div>
-    </div>
-
-    <div class="filter-section">
-      <div class="filter-label">Il mio stato</div>
-      <div class="filter-chips">
-        <button class="fchip" data-group="stato" data-val="__nessuno__" onclick="toggleSingleChip(this)">— Nessuno —</button>
-        <button class="fchip" data-group="stato" data-val="da_candidare" onclick="toggleSingleChip(this)">📋 Da candidare</button>
-        <button class="fchip" data-group="stato" data-val="candidato" onclick="toggleSingleChip(this)">✉️ Candidato</button>
-        <button class="fchip" data-group="stato" data-val="risposta" onclick="toggleSingleChip(this)">📬 Risposta</button>
-        <button class="fchip" data-group="stato" data-val="colloquio" onclick="toggleSingleChip(this)">🗓 Colloquio</button>
-        <button class="fchip" data-group="stato" data-val="scartato" onclick="toggleSingleChip(this)">❌ Scartato</button>
-      </div>
-    </div>
-
-    <div class="dist-row">
-      <span class="dist-lbl">📏 Max distanza da Monza</span>
-      <input type="range" id="distSlider" min="10" max="80" value="80" step="5" oninput="onSlider()">
-      <span class="dist-val" id="distVal">Tutte</span>
-    </div>
-
-    <div class="reset-row">
-      <button class="btn-reset" onclick="resetFiltri()">↺ Azzera filtri</button>
+    <div class="filter-toggle-row">
+      <button class="filter-toggle-btn" id="filterToggleBtn" onclick="toggleFiltersPanel()">
+        <span>🎛️ Filtri</span>
+        <span class="filter-badge" id="filterBadge" style="display:none">0</span>
+        <span class="chevron-toggle" id="filtersChevron">▾</span>
+      </button>
       <span class="cnt-lbl" id="cntLbl"></span>
+    </div>
+
+    <div class="filters-panel" id="filtersPanel" style="display:none">
+
+      <div class="filter-section">
+        <div class="filter-label">Struttura</div>
+        <div class="filter-chips">
+          <button class="fchip" data-group="tipo" data-val="privato" onclick="toggleSingleChip(this)">🏥 Privato</button>
+          <button class="fchip" data-group="tipo" data-val="irccs" onclick="toggleSingleChip(this)">🔬 IRCCS</button>
+          <button class="fchip" data-group="tipo" data-val="asst" onclick="toggleSingleChip(this)">🏨 ASST</button>
+          <button class="fchip" data-group="tipo" data-val="coop" onclick="toggleSingleChip(this)">🤝 Coop.</button>
+          <button class="fchip" data-group="tipo" data-val="ricerca" onclick="toggleSingleChip(this)">📚 Ricerca</button>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-label">Posizione</div>
+        <div class="filter-chips">
+          <button class="fchip" data-group="pos" data-val="aperta" onclick="toggleSingleChip(this)">🟢 Aperta ora</button>
+          <button class="fchip" data-group="pos" data-val="lp" onclick="toggleSingleChip(this)">🟡 LP/incarico</button>
+          <button class="fchip" data-group="pos" data-val="borsa" onclick="toggleSingleChip(this)">🔵 Borsa</button>
+          <button class="fchip" data-group="pos" data-val="spontanea" onclick="toggleSingleChip(this)">⚪ Spontanea</button>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-label">Provincia <span class="filter-hint">(più scelte possibili)</span></div>
+        <div class="filter-chips">
+          <button class="fchip" data-group="prov" data-val="MI" onclick="toggleMultiChip(this)">📍 MI</button>
+          <button class="fchip" data-group="prov" data-val="MB" onclick="toggleMultiChip(this)">📍 MB</button>
+          <button class="fchip" data-group="prov" data-val="LC" onclick="toggleMultiChip(this)">📍 LC</button>
+          <button class="fchip" data-group="prov" data-val="CO" onclick="toggleMultiChip(this)">📍 CO</button>
+          <button class="fchip" data-group="prov" data-val="BG" onclick="toggleMultiChip(this)">📍 BG</button>
+          <button class="fchip" data-group="prov" data-val="PV" onclick="toggleMultiChip(this)">📍 PV</button>
+          <button class="fchip" data-group="prov" data-val="LO" onclick="toggleMultiChip(this)">📍 LO</button>
+        </div>
+      </div>
+
+      <div class="filter-section">
+        <div class="filter-label">Il mio stato</div>
+        <div class="filter-chips">
+          <button class="fchip" data-group="stato" data-val="__nessuno__" onclick="toggleSingleChip(this)">— Nessuno —</button>
+          <button class="fchip" data-group="stato" data-val="da_candidare" onclick="toggleSingleChip(this)">📋 Da candidare</button>
+          <button class="fchip" data-group="stato" data-val="candidato" onclick="toggleSingleChip(this)">✉️ Candidato</button>
+          <button class="fchip" data-group="stato" data-val="risposta" onclick="toggleSingleChip(this)">📬 Risposta</button>
+          <button class="fchip" data-group="stato" data-val="colloquio" onclick="toggleSingleChip(this)">🗓 Colloquio</button>
+          <button class="fchip" data-group="stato" data-val="scartato" onclick="toggleSingleChip(this)">❌ Scartato</button>
+        </div>
+      </div>
+
+      <div class="dist-row">
+        <span class="dist-lbl">📏 Max distanza da Monza</span>
+        <input type="range" id="distSlider" min="10" max="80" value="80" step="5" oninput="onSlider()">
+        <span class="dist-val" id="distVal">Tutte</span>
+      </div>
+
+      <div class="reset-row">
+        <button class="btn-reset" onclick="resetFiltri()">↺ Azzera filtri</button>
+      </div>
     </div>
   </div>
 
@@ -612,6 +633,28 @@ function setBatch(btn){
   applyFilters();
 }
 
+function toggleFiltersPanel(){
+  var panel=document.getElementById('filtersPanel');
+  var chev=document.getElementById('filtersChevron');
+  var isOpen=panel.style.display!=='none';
+  panel.style.display = isOpen ? 'none' : 'flex';
+  chev.classList.toggle('open', !isOpen);
+}
+
+function updateFilterBadge(){
+  var n = (fTipo?1:0) + (fPos?1:0) + (fStato?1:0) + fProv.length + (fDist<80?1:0);
+  var badge=document.getElementById('filterBadge');
+  var btn=document.getElementById('filterToggleBtn');
+  if(n>0){
+    badge.style.display='inline-block';
+    badge.textContent=n;
+    btn.classList.add('has-active');
+  } else {
+    badge.style.display='none';
+    btn.classList.remove('has-active');
+  }
+}
+
 // Chip a selezione singola (tipo, posizione, stato): un clic seleziona,
 // un secondo clic sulla stessa chip la deseleziona (toggle).
 function toggleSingleChip(btn){
@@ -663,6 +706,7 @@ function applyFilters(){
     }
     return true;
   });
+  updateFilterBadge();
   renderCards(filtered);
 }
 
